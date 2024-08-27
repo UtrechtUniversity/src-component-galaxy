@@ -3,7 +3,7 @@
   ansible.builtin.include_vars: vars/internal_vars.yml
 
 - name: Load component variables
-  ansible.builtin.include_vars: vars/src_galaxy_vars.yml
+  ansible.builtin.inclrs: vars/src_galaxy_vars.yml
 
 - name: Set admins
   block:
