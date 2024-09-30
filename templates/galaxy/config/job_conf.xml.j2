@@ -8,7 +8,7 @@
     <destinations default="{{ 'docker_dispatch' if _galaxy_jobs_docker else 'local' }}">
         <destination id="local" runner="local"/>
         {% if _galaxy_jobs_docker %}
-        <destination id="docker_local" runner="{{ if 'pulsar' _galaxy_jobs_pulsar_embedded else 'local'  }}">
+        <destination id="docker_local" runner="{{ 'pulsar' if _galaxy_jobs_pulsar_embedded else 'local'  }}">
             <param id="docker_enabled">true</param>
             <param id="docker_volumes">$defaults</param>
             <param id="docker_sudo">false</param>
