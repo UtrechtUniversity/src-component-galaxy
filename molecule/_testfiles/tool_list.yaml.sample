@@ -49,15 +49,13 @@ tools:
   revisions:
   - '8c650f7f76e9'  # v0.62
   - 'd2cf2c0c8a11'  # v0.63
-- name: ibridges_upload
-  owner: maarten.schermer
-  tool_panel_section_id: iBridges
+- name: bedtools
+  owner: iuc
+  tool_panel_section_label: 'BED tools'
+  revisions:
+  - 2cd7e321d259
+- name: data_manager_fetch_genome_dbkeys_all_fasta
+  owner: devteam
   tool_shed_url: https://toolshed.g2.bx.psu.edu
   revisions:
-  - '6194155810b6'  # v0.2
-- name: ibridges_browser
-  owner: maarten.schermer
-  tool_panel_section_id: iBridges
-  tool_shed_url: https://toolshed.g2.bx.psu.edu
-  revisions:
-  - '6194155810b6'  # v0.2
+  - b1bc53e9bbc5
