@@ -2,10 +2,22 @@
 - name: Converge
   hosts: all
   gather_facts: false
-
-- name: Run playbook as test
-  ansible.builtin.import_playbook: ../../galaxysrv.yml
   vars:
-    src_galaxy_tool_files: "{{ playbook_dir ~ '/molecule/_testfiles/tool_list.yaml.sample' }}"
-    src_galaxy_workflow_files: "{{ playbook_dir ~ '/molecule/_testfiles/sample-workflow.ga' }}"
-    src_ibridges: 'true'
+    component:
+      name: galaxy
+      path: galaxysrv.yml
+      arguments: -i 127.0.0.1, --skip-tags {{ ansible_skip_tags | join(',') }}
+      parameters:
+        src_galaxy_tool_files: "{{ playbook_dir ~ '/molecule/_testfiles/tool_list.yaml.sample' }}"
+        src_galaxy_workflow_files: "{{ playbook_dir ~ '/molecule/_testfiles/sample-workflow.ga' }}"
+        src_ibridges: 'true'
+  tasks:
+
+    - name: Test the component by executing it using ansible on the workspace
+      ansible.builtin.command: >
+        ansible-playbook -c local -v -b {{ component.arguments }} --extra-vars='{{ component.parameters | to_json }}' /usr/local/{{ component.name }}/{{ component.path }}
+      register: ansible_on_workspace
+      changed_when: >
+        ansible_on_workspace.stdout_lines is not defined or
+        'changed=0' not in
+        ansible_on_workspace.stdout_lines[ lookup('ansible.utils.index_of', ansible_on_workspace.stdout_lines, 'regex', '\s*PLAY RECAP\s*')+1 ]

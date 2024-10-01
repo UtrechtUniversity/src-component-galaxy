@@ -13,6 +13,17 @@
         version: 9.4.0
         state: present
 
+    - name: Copy local component
+      ansible.posix.synchronize:
+        src: ../../../
+        dest: /usr/local/galaxy
+        archive: false
+        links: true
+        recursive: true
+        rsync_opts:
+          - --exclude=".*"
+        ssh_connection_multiplexing: true
+
 - name: Run nginx component
   ansible.builtin.import_playbook: ../../plugin-nginx/plugin-nginx.yml
   vars:
