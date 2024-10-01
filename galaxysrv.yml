@@ -40,7 +40,14 @@
   
   tasks:
 
-    - name: Configure nginx for interactive tools
+    - name: Copy default tool config
+      tags: molecule-idempotence-notest
+      ansible.builtin.copy:
+        remote_src: true
+        src: "{{ galaxy_server_dir }}/config/tool_conf.xml.sample"
+        dest: "{{ galaxy_config_dir }}/tool_conf.xml"
+
+    - name: Enable interactive tools
       ansible.builtin.include_tasks: tasks/interactive_tools.yml
       when: _galaxy_use_interactive_tools
 
