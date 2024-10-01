@@ -27,6 +27,8 @@
   roles:
     - role: geerlingguy.docker
       when: not _molecule_active and _galaxy_jobs_docker
+    - role: usegalaxy_eu.apptainer
+      when: _galaxy_jobs_singularity
     - role: uusrc.general.nginx_reverse_proxy
       vars:
         nginx_reverse_proxy_locations: "{{ galaxy_nginx_vhost_config }}"
