@@ -18,9 +18,6 @@ galaxy_group: galaxy
 galaxy_client_use_prebuilt: true
 galaxy_systemd_root: true
 galaxy_backup_configfiles: false
-galaxy_config_files:
-  - src: files/galaxy/config/tool_conf.xml
-    dest: "{{ galaxy_config_dir }}/tool_conf.xml"
 galaxy_config_templates:
   - src: templates/galaxy/config/user_preferences_extra_conf.yml.j2
     dest: "{{ galaxy_config_dir }}/user_preferences_extra_conf.yml"
