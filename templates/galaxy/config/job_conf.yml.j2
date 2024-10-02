@@ -2,7 +2,12 @@ runners:
   local:
     load: galaxy.jobs.runners.local:LocalJobRunner
     workers: 4
-
+{% if _galaxy_jobs_pulsar_embedded %}
+  pulsar_embedded:
+    load: galaxy.jobs.runners.pulsar:PulsarEmbeddedJobRunner
+    config: {{ galaxy_config_dir }}/pulsar_app.yml
+    workers: 2
+{% endif %}
 execution:
   default: docker_dispatch
   environments:
@@ -10,11 +15,15 @@ execution:
       runner: local
 
     docker_local:
-      runner: local
+      runner: {{ 'pulsar_embedded' if _galaxy_jobs_pulsar_embedded else 'local' }}
       docker_enabled: true
       docker_set_user:
       docker_sudo: false
-
+{%    if _galaxy_jobs_pulsar_embedded  %}
+      container_monitor_result: callback
+      env:
+        REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
+{%    endif                            %}
     docker_dispatch:
       runner: dynamic
       type: docker_dispatch
