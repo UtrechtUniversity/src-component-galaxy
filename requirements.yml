@@ -11,6 +11,8 @@ roles:
     version: 1.2.0
   - src: geerlingguy.docker
     version: 6.1.0
+  - src: usegalaxy_eu.apptainer
+    version: 0.0.2
 
 collections:
   - name: community.general
