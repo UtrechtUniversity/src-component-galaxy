@@ -1,7 +1,7 @@
 galaxy_nginx_vhost_config:
   - name: galaxy
     location: /
-    error_page: 502 /err_502.html;
+    error_page: 502 /err_502.html
     proxy_pass: "http://{{ _galaxy_local_address }}"
     auth: "{{ _molecule_active | ternary(omit, 'sram') }}"
     proxy_set_header:
