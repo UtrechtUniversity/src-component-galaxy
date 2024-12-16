@@ -1,6 +1,6 @@
 ---
 
-ansible.builtin.copy:
+- ansible.builtin.copy:
   src: files/nginx/error500.html
   dest: "{{ _galaxy_error_502 }}"
   owner: www-data
