@@ -32,3 +32,10 @@ galaxy_nginx_vhost_config:
     location: = /galaxy502.html
     root: "{{ _galaxy_error_502 | dirname }}"
     internal: ''
+  - name: x_accel_redirect
+    location: /_x_accel_redirect/
+    internal: ''
+    alias: '/'
+    add_header: 'Access-Control-Allow-Origin $upstream_http_access_control_allow_origin'
+    add_header: 'Access-Control-Allow-Methods $upstream_http_access_control_allow_methods'
+  
