@@ -4,9 +4,8 @@ on:
     branches:
       - main
     paths:
-      - 'molecule/**'
-      - 'playbooks/**'
-      - 'roles/**'
+      - '**/**.yaml'
+      - '**/**.yml'
   pull_request:
     branches:
       - main
@@ -16,10 +15,8 @@ on:
       - synchronize
       - ready_for_review
     paths:
-      - 'molecule/**'
-      - 'playbooks/**'
-      - 'roles/**'
-
+      - '**/**.yaml'
+      - '**/**.yml'
 jobs:
   build:
     name: Ansible Lint # Naming the build is important to use it as a status check
