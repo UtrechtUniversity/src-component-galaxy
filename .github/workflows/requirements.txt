@@ -1,0 +1,4 @@
+# If dependabot creates an update for a new version of Galaxy:
+# 1. Thank dependabot and close the PR
+# 2. Update the default Galaxy version in vars/galaxy_vars.yml and open a PR to test the new version.
+galaxy~=23.2
