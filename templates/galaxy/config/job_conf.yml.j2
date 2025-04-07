@@ -11,12 +11,13 @@ execution:
       env:
         - name: PATH
           action: prepend_to
-          value: /srv/galaxy/datadir/shed_tools:$PATH
-    docker_local:
+          value: "{{ galaxy_mutable_data_dir }}/shed_tools:$PATH"
+    docker:
       runner: local
       docker_enabled: true
       docker_set_user:
       docker_sudo: false
+      container_resolvers: # use defaults
 
 {% if _galaxy_use_interactive_tools %}
     {{ _galaxy_default_dispatcher }}:
@@ -26,7 +27,7 @@ execution:
 {% endif %}
 
     singularity:
-      singularity_volumes: "$galaxy_root:ro,$tool_directory:ro,$working_directory:rw,$job_directory:rw,{{ galaxy_mutable_data_dir }}:rw,/cvmfs:ro"
+      singularity_volumes: {{ apptainer_volumes | join(',') }}
       runner: local
       singularity_enabled: true
       container_resolvers:

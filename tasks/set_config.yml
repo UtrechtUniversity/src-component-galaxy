@@ -15,24 +15,34 @@
 - name: Load interactive tools variables
   ansible.builtin.include_vars: vars/interactive_tools_vars.yml
 
+- name: Load CVMFS variables
+  ansible.builtin.include_vars: vars/cvmfs_vars.yml
+
 - name: Set admins from CO group
   ansible.builtin.set_fact:
-    _galaxy_admins: "{{ fact_co_groups[_galaxy_admin_co_group] | product(['@' + _galaxy_remote_user_maildomain]) | map('join') | list | join(',') | default('') }}"
+    _galaxy_admins: >-
+      {{ fact_co_groups[_galaxy_admin_co_group] | product(['@' + _galaxy_remote_user_maildomain]) |
+        map('join') | list | join(',') | default('') }}
   when: fact_co_groups[_galaxy_admin_co_group] is defined
 
 - name: Set admins to blank
   ansible.builtin.set_fact:
-    _galaxy_admins: ''
+    _galaxy_admins: ""
   when: fact_co_groups[_galaxy_admin_co_group] is not defined
 
 - name: Determine whether to bootstrap Galaxy
-  set_fact:
-    _galaxy_do_bootstrap:  "{{ _galaxy_bootstrap and _galaxy_tool_files | length + _galaxy_workflow_files | length + _galaxy_custom_repo | length  > 0}}"
+  ansible.builtin.set_fact:
+    _galaxy_do_bootstrap: "{{ _galaxy_bootstrap and _galaxy_tool_files | length + _galaxy_workflow_files | length + _galaxy_custom_repo | length > 0 }}"
 
 - name: Generate a bootstrap key
   when: _galaxy_do_bootstrap and not _molecule_idempotence
   ansible.builtin.set_fact:
     _galaxy_bootstrap_api_key: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_lowercase', 'digits'], length=50) }}"
+
+- name: Generate a remote user secret
+  when: not _molecule_idempotence
+  ansible.builtin.set_fact:
+    _galaxy_remote_user_secret: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_lowercase', 'digits'], length=50) }}"
 
 - name: Load nginx variables
   ansible.builtin.include_vars: vars/nginx_vars.yml
@@ -49,3 +59,15 @@
 - name: Save _galaxy_config
   ansible.builtin.set_fact:
     _galaxy_config: "{{ galaxy_configuration }}"
+
+- name: Set AppTainer volume mounts variable
+  ansible.builtin.set_fact:
+    apptainer_volumes: "{{ apptainer_volumes | default([]) | union([item]) }}"
+  when: item != omit
+  loop:
+    - "$galaxy_root:ro"
+    - "$tool_directory:ro"
+    - "$working_directory:rw"
+    - "$job_directory:rw"
+    - "{{ galaxy_mutable_data_dir }}:rw"
+    - "{% if _galaxy_enable_cvmfs %}/cvmfs{% else %}{{ omit }}{% endif %}" # Conditionally add the /cvmfs dir to volume mounts

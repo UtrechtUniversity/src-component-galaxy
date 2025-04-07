@@ -3,7 +3,6 @@
   hosts: "{{ lookup('env', 'variable_host') | default('localhost', true) }}" # workaround because SRC needs localhost, but molecule needs specifc hostvars
 
   pre_tasks:
-
     - name: Set workspace user facts
       ansible.builtin.include_role:
         name: uusrc.general.fact_regular_users
@@ -15,23 +14,31 @@
       ansible.builtin.apt:
         update_cache: true
         name:
-          - 'git'
-          - 'python3-psycopg2'
-          - 'python3-virtualenv'
-          - 'python3-dev'
-          - 'gcc'
-          - 'acl'
-          - 'gnutls-bin' # workaround for git-clone issue, https://stackoverflow.com/a/53147659/4326632
+          - "git"
+          - "python3-psycopg2"
+          - "python3-virtualenv"
+          - "python3-dev"
+          - "gcc"
+          - "acl"
+          - "gnutls-bin" # workaround for git-clone issue, https://stackoverflow.com/a/53147659/4326632
         state: present
 
+    - name: Install AppTainer
+      ansible.builtin.include_tasks: tasks/apptainer.yml
+
+    - name: Additional nginx config
+      ansible.builtin.include_tasks: tasks/nginx.yml
+
   roles:
-    - galaxyproject.cvmfs
-    - usegalaxy_eu.apptainer
+    - role: galaxyproject.cvmfs
+      when: _galaxy_enable_cvmfs
     - role: geerlingguy.docker
       when: not _molecule_active and _galaxy_enable_docker
     - role: uusrc.general.nginx_reverse_proxy
       vars:
-        nginx_reverse_proxy_locations: "{{ galaxy_nginx_vhost_config }}"
+        nginx_reverse_proxy_locations: >-
+          {{ galaxy_nginx_vhost_config +
+            ( _galaxy_enable_tus | ternary(tusd_nginx_config, []) ) }}
     - role: galaxyproject.postgresql
     - role: galaxyproject.postgresql_objects
       become: true
@@ -39,10 +46,19 @@
     - role: galaxyproject.galaxy
       vars:
         galaxy_config: "{{ _galaxy_config }}"
-#    - role: galaxyproject.miniconda
-#      become: true
-#      become_user: "{{ galaxy_user }}"  
+    - role: galaxyproject.tusd
+      when: _galaxy_enable_tus
+
   tasks:
+
+    - name: Lock down nginx config for www-data # so non-root users cannot read the GX_SECRET
+      ansible.builtin.file:
+        state: directory
+        owner: root
+        group: www-data
+        mode: "0750"
+        path: /etc/nginx/app-location-conf.d
+        recurse: true
 
     - name: Copy default tool config
       tags: molecule-idempotence-notest
@@ -52,8 +68,8 @@
         dest: "{{ galaxy_config_dir }}/tool_conf.xml"
         owner: "{{ galaxy_privsep_user }}"
         group: "{{ galaxy_user }}"
-        mode: "644"
-  
+        mode: "0644"
+
     - name: Enable interactive tools
       ansible.builtin.include_tasks: tasks/interactive_tools.yml
       when: _galaxy_use_interactive_tools
@@ -76,12 +92,22 @@
     - name: Populate service facts
       ansible.builtin.service_facts:
 
+    # This is to ensure that the Collaborative Organisation admin group can use sudo on the machine,
+    # allowing us to disable the ResearchCloud co_passwordless_sudo parameter,
+    # which grants passwordless sudo to *all* CO users on the machine.
+    - name: Add CO admin group to sudoers
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/co_admins
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: "%{{ _galaxy_admin_co_group }} ALL=(ALL:ALL) ALL"
+
     - name: Enable the server and bootstrap
       when: "ansible_facts.services['galaxy-gunicorn.service'] is not defined or ansible_facts.services['galaxy-gunicorn.service']['state'] != 'running' or _galaxy_do_bootstrap"
       block:
         - name: Galaxy gravity graceful
-          command: "/usr/local/bin/galaxyctl graceful"
-
+          ansible.builtin.command: "/usr/local/bin/galaxyctl graceful"
         - name: Enable galaxy service
           ansible.builtin.systemd_service:
             name: galaxy.target
@@ -89,21 +115,19 @@
             state: started
 
         - name: Include tasks to bootstrap the instance
-          when: _galaxy_do_bootstrap 
+          when: _galaxy_do_bootstrap
           ansible.builtin.include_tasks: tasks/bootstrap.yml
 
       always:
-
         - name: Remove bootstrap API key from Galaxy config
           when: _galaxy_bootstrap_api_key is defined
           ansible.builtin.lineinfile:
             path: "{{ galaxy_config_dir }}/galaxy.yml"
-            regexp: '.*bootstrap_admin_api_key:'
+            regexp: ".*bootstrap_admin_api_key:"
             state: absent
           notify: galaxy gravity restart
 
   handlers:
-
     - name: Restart nginx
       ansible.builtin.service:
         name: nginx
@@ -111,6 +135,6 @@
       listen: restart nginx
 
     - name: Galaxy gravity restart
-      command: "/usr/local/bin/galaxyctl graceful"
+      ansible.builtin.command: "/usr/local/bin/galaxyctl graceful"
       listen: "restart galaxy"
       when: _galaxy_already_started is not defined
