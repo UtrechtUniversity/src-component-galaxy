@@ -139,3 +139,4 @@ galaxy_configuration:
     gx_it_proxy:
       enable: "{{ _galaxy_use_interactive_tools }}"
       port: "{{ gie_proxy_port }}"
+    
