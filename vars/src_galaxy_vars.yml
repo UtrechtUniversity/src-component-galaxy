@@ -27,15 +27,31 @@ _galaxy_brand: "{{ src_galaxy_brand | default('SURF ResearchCloud', true) }}"
 
 # Build the final lists of tool and workflow installation files
 
-# select() necessary because split on the default '' yields ['']
 _galaxy_tool_files: "{{ src_galaxy_tool_files | default('', true) | split(',') | select() + _galaxy_default_tool_files_list }}"
 _galaxy_workflow_files: "{{ src_galaxy_workflow_files | default('') | split(',') | select() }}"
 
-# Pulsar configuration handling - safe defaults
-_galaxy_pulsar_configs_raw: "{{ src_galaxy_pulsar_configs | default([], true) }}"
-_galaxy_pulsar_tool_mappings: "{{ src_galaxy_pulsar_tool_mappings | default([], true) }}"
+_galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
+_galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
 
-# Check if we have any pulsar configs
+# Parse Pulsar configs 
+_galaxy_pulsar_configs_raw: >-
+  {% if _galaxy_pulsar_configs_input == '' or _galaxy_pulsar_configs_input == '[]' %}
+  []
+  {% else %}
+    {% set fixed_json = _galaxy_pulsar_configs_input | regex_replace('{(\w+):', '{"\\1":') | regex_replace(',\s*(\w+):', ', "\\1":') | regex_replace(':\s*([^,\[\]{}"\']+)([,}\]])', ': "\\1"\\2') | regex_replace(':\s*true', ': true') | regex_replace(':\s*false', ': false') %}
+    {{ fixed_json | from_json }}
+  {% endif %}
+
+# Parse tool mappings   
+_galaxy_pulsar_tool_mappings: >-
+  {% if _galaxy_pulsar_tool_mappings_input == '' or _galaxy_pulsar_tool_mappings_input == '[]' %}
+  []
+  {% else %}
+    {% set fixed_json = _galaxy_pulsar_tool_mappings_input | regex_replace('{(\w+):', '{"\\1":') | regex_replace(',\s*(\w+):', ', "\\1":') | regex_replace(':\s*([^,\[\]{}"\']+)([,}\]])', ': "\\1"\\2') %}
+    {{ fixed_json | from_json }}
+  {% endif %}
+
+# Check if there are  any pulsar configs
 _galaxy_has_pulsar: "{{ (_galaxy_pulsar_configs_raw | length > 0) | bool }}"
 
 # Note that some component parameters are also used in galaxy_vars.yml:
