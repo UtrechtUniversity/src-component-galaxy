@@ -5,7 +5,6 @@ _galaxy_job_destinations: # valid job destinations
   - docker
   - singularity
   - local
-
 _galaxy_bootstrap: "{{ _molecule_idempotence | ternary(false, src_galaxy_bootstrap | default(false, true) | bool) }}"
 _galaxy_ibridges_enabled: "{{ src_ibridges | default(true, true) | bool }}"
 _galaxy_default_tool_files:
@@ -31,6 +30,13 @@ _galaxy_brand: "{{ src_galaxy_brand | default('SURF ResearchCloud', true) }}"
 # select() necessary because split on the default '' yields ['']
 _galaxy_tool_files: "{{ src_galaxy_tool_files | default('', true) | split(',') | select() + _galaxy_default_tool_files_list }}"
 _galaxy_workflow_files: "{{ src_galaxy_workflow_files | default('') | split(',') | select() }}"
+
+# Pulsar configuration handling - safe defaults
+_galaxy_pulsar_configs_raw: "{{ src_galaxy_pulsar_configs | default([], true) }}"
+_galaxy_pulsar_tool_mappings: "{{ src_galaxy_pulsar_tool_mappings | default([], true) }}"
+
+# Check if we have any pulsar configs
+_galaxy_has_pulsar: "{{ (_galaxy_pulsar_configs_raw | length > 0) | bool }}"
 
 # Note that some component parameters are also used in galaxy_vars.yml:
 # src_galaxy_storage_path
