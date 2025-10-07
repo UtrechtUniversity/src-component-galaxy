@@ -33,27 +33,32 @@ _galaxy_workflow_files: "{{ src_galaxy_workflow_files | default('') | split(',')
 _galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
 _galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
 
-# Parse Pulsar configs 
+_galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
+_galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
+
+# Parse Pulsar configs
 _galaxy_pulsar_configs_raw: >-
-  {% if _galaxy_pulsar_configs_input == '' or _galaxy_pulsar_configs_input == '[]' %}
+  {%- if _galaxy_pulsar_configs_input == '' or _galaxy_pulsar_configs_input == '[]' -%}
   []
-  {% else %}
-    {% set fixed_json = _galaxy_pulsar_configs_input | regex_replace('{(\w+):', '{"\\1":') | regex_replace(',\s*(\w+):', ', "\\1":') | regex_replace(':\s*([^,\[\]{}"\']+)([,}\]])', ': "\\1"\\2') | regex_replace(':\s*true', ': true') | regex_replace(':\s*false', ': false') %}
-    {{ fixed_json | from_json }}
-  {% endif %}
+  {%- else -%}
+    {%- set step1 = _galaxy_pulsar_configs_input | regex_replace('([{,]\s*)(\w+):', '\\1"\\2":') -%}
+    {%- set step2 = step1 | regex_replace(':\s*([^,\[\]{}"\'\s][^,\[\]{}]*?)(\s*[,}\]])', ': "\\1"\\2') -%}
+    {%- set step3 = step2 | regex_replace(':\s*"(true|false)"', ': \\1') -%}
+    {{ step3 | from_json }}
+  {%- endif -%}
 
-# Parse tool mappings   
+# Parse tool mappings
 _galaxy_pulsar_tool_mappings: >-
-  {% if _galaxy_pulsar_tool_mappings_input == '' or _galaxy_pulsar_tool_mappings_input == '[]' %}
+  {%- if _galaxy_pulsar_tool_mappings_input == '' or _galaxy_pulsar_tool_mappings_input == '[]' -%}
   []
-  {% else %}
-    {% set fixed_json = _galaxy_pulsar_tool_mappings_input | regex_replace('{(\w+):', '{"\\1":') | regex_replace(',\s*(\w+):', ', "\\1":') | regex_replace(':\s*([^,\[\]{}"\']+)([,}\]])', ': "\\1"\\2') %}
-    {{ fixed_json | from_json }}
-  {% endif %}
+  {%- else -%}
+    {%- set step1 = _galaxy_pulsar_tool_mappings_input | regex_replace('([{,]\s*)(\w+):', '\\1"\\2":') -%}
+    {%- set step2 = step1 | regex_replace(':\s*([^,\[\]{}"\'\s][^,\[\]{}]*?)(\s*[,}\]])', ': "\\1"\\2') -%}
+    {{ step2 | from_json }}
+  {%- endif -%}
 
-# Check if there are  any pulsar configs
+# Check if there are  pulsar configs
 _galaxy_has_pulsar: "{{ (_galaxy_pulsar_configs_raw | length > 0) | bool }}"
-
 # Note that some component parameters are also used in galaxy_vars.yml:
 # src_galaxy_storage_path
 # src_galaxy_version
