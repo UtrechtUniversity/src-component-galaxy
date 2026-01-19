@@ -2,7 +2,7 @@
 roles:
   - src: https://github.com/galaxyproject/ansible-galaxy.git
     name: galaxyproject.galaxy
-    version: 08974b18e2aad1e5569854e5d6c8b5c966bf55e4
+    version: 0.12.1
   - src: https://github.com/utrechtuniversity/ansible-galaxy-tools.git
     name: galaxyproject.galaxy-tools
   - src: galaxyproject.postgresql
