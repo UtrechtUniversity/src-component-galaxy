@@ -33,10 +33,8 @@ _galaxy_workflow_files: "{{ src_galaxy_workflow_files | default('') | split(',')
 _galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
 _galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
 
-_galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
-_galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
-
 # Parse Pulsar configs
+# The Pulsar config redirects users to copy and pass yml strings via the component vars. The config normalises the passed strings  
 _galaxy_pulsar_configs_raw: >-
   {%- if _galaxy_pulsar_configs_input == '' or _galaxy_pulsar_configs_input == '[]' -%}
   []
