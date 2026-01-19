@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANSIBLE_FORCE_COLOR: '1'
-      ANSIBLE_STDOUT_CALLBACK: yaml
+      ANSIBLE_RESULT_FORMAT: yaml
       CRUN_VER: 1.11.2
       REQUIREMENTS_FILE: molecule/requirements.txt
       BOOTSTRAP_KEY: foobar  # defines an api bootstrap key for the molecule tests
