@@ -5,7 +5,6 @@ _galaxy_job_destinations: # valid job destinations
   - docker
   - singularity
   - local
-
 _galaxy_bootstrap: "{{ _molecule_idempotence | ternary(false, src_galaxy_bootstrap | default(false, true) | bool) }}"
 _galaxy_ibridges_enabled: "{{ src_ibridges | default(true, true) | bool }}"
 _galaxy_default_tool_files:
@@ -27,10 +26,36 @@ _galaxy_brand: "{{ src_galaxy_brand | default('SURF ResearchCloud', true) }}"
 
 # Build the final lists of tool and workflow installation files
 
-# select() necessary because split on the default '' yields ['']
 _galaxy_tool_files: "{{ src_galaxy_tool_files | default('', true) | split(',') | select() + _galaxy_default_tool_files_list }}"
 _galaxy_workflow_files: "{{ src_galaxy_workflow_files | default('') | split(',') | select() }}"
 
+_galaxy_pulsar_configs_input: "{{ src_galaxy_pulsar_configs | default('', true) }}"
+_galaxy_pulsar_tool_mappings_input: "{{ src_galaxy_pulsar_tool_mappings | default('', true) }}"
+
+# Parse Pulsar configs
+# The Pulsar config redirects users to copy and pass yml strings via the component vars. The config normalises the passed strings  
+_galaxy_pulsar_configs_raw: >-
+  {%- if _galaxy_pulsar_configs_input == '' or _galaxy_pulsar_configs_input == '[]' -%}
+  []
+  {%- else -%}
+    {%- set step1 = _galaxy_pulsar_configs_input | regex_replace('([{,]\s*)(\w+):', '\\1"\\2":') -%}
+    {%- set step2 = step1 | regex_replace(':\s*([^,\[\]{}"\'\s][^,\[\]{}]*?)(\s*[,}\]])', ': "\\1"\\2') -%}
+    {%- set step3 = step2 | regex_replace(':\s*"(true|false)"', ': \\1') -%}
+    {{ step3 | from_json }}
+  {%- endif -%}
+
+# Parse tool mappings
+_galaxy_pulsar_tool_mappings: >-
+  {%- if _galaxy_pulsar_tool_mappings_input == '' or _galaxy_pulsar_tool_mappings_input == '[]' -%}
+  []
+  {%- else -%}
+    {%- set step1 = _galaxy_pulsar_tool_mappings_input | regex_replace('([{,]\s*)(\w+):', '\\1"\\2":') -%}
+    {%- set step2 = step1 | regex_replace(':\s*([^,\[\]{}"\'\s][^,\[\]{}]*?)(\s*[,}\]])', ': "\\1"\\2') -%}
+    {{ step2 | from_json }}
+  {%- endif -%}
+
+# Check if there are  pulsar configs
+_galaxy_has_pulsar: "{{ (_galaxy_pulsar_configs_raw | length > 0) | bool }}"
 # Note that some component parameters are also used in galaxy_vars.yml:
 # src_galaxy_storage_path
 # src_galaxy_version
