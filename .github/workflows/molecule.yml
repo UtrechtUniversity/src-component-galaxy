@@ -13,8 +13,7 @@ jobs:
   molecule:
     runs-on: ubuntu-latest
     env:
-      ANSIBLE_FORCE_COLOR: '1'
-      ANSIBLE_RESULT_FORMAT: yaml
+      ANSIBLE_FORCE_COLOR: '0' # ANSI coloring breaks GitHub's ability to mask GH secrets in logs.      ANSIBLE_RESULT_FORMAT: yaml
       CRUN_VER: 1.11.2
       REQUIREMENTS_FILE: molecule/requirements.txt
       BOOTSTRAP_KEY: foobar  # defines an api bootstrap key for the molecule tests
