@@ -2,7 +2,10 @@ runners:
   local:
     load: galaxy.jobs.runners.local:LocalJobRunner
     workers: 4
-
+{% if _galaxy_has_pulsar %}
+  pulsar:
+    load: galaxy.jobs.runners.pulsar:PulsarRESTJobRunner
+{% endif %}
 execution:
   default: singularity
   environments:
@@ -52,6 +55,46 @@ execution:
         - name: APPTAINER_TMPDIR
           value: /tmp
 
+{% if _galaxy_has_pulsar %}
+{% for pulsar in _galaxy_pulsar_configs_raw %}
+{% set env_name = 'remote_' ~ (pulsar.name | default(pulsar.url | replace('https://', '') | replace('http://', '') | replace('.', '-') | replace('/', '-'))) %}
+    {{ env_name }}:
+      runner: pulsar
+      url: {{ pulsar.url }}
+      private_token: {{ pulsar.private_token }}
+      dependency_resolution: {{ pulsar.dependency_resolution | default('remote') }}
+      manager: {{ pulsar.manager | default('_default_') }}
+{% if pulsar.docker_enabled | default(false) | bool %}
+      docker_enabled: {{ pulsar.docker_enabled }}
+      docker_set_user: {{ pulsar.docker_set_user | default('null') }}
+      docker_memory: "{{ pulsar.docker_memory | default('8G') }}"
+      singularity_enabled: {{ pulsar.singularity_enabled | default(false) }}
+      tmp_dir: {{ pulsar.tmp_dir | default(true) }}
+      outputs_to_working_directory: {{ pulsar.outputs_to_working_directory | default(false) }}
+{% if pulsar.container_resolvers is defined %}
+      container_resolvers:
+{% for resolver in pulsar.container_resolvers %}
+        - type: {{ resolver.type }}
+{% if resolver.require_container is defined %}
+          require_container: {{ resolver.require_container }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if pulsar.container_monitor_command is defined %}
+      container_monitor_command: {{ pulsar.container_monitor_command }}
+      container_monitor_result: {{ pulsar.container_monitor_result | default('callback') }}
+      container_monitor_get_ip_method: {{ pulsar.container_monitor_get_ip_method }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
 tools:
   - class: local # these special tools that aren't parameterized for remote execution - expression tools, upload, etc
     environment: local
+{% if _galaxy_has_pulsar and _galaxy_pulsar_tool_mappings | length > 0 %}
+{% for tool_mapping in _galaxy_pulsar_tool_mappings %}
+  - id: {{ tool_mapping.tool_id }}
+    environment: {{ tool_mapping.environment }}
+{% endfor %}
+{% endif %}
